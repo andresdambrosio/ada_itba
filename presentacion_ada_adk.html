@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ada — Agente del ITBA con Google ADK</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --itba-blue: #003366;
+    --itba-accent: #0066cc;
+    --itba-light: #e8f0f8;
+    --itba-pale: #f5f8fc;
+    --code-bg: #1e2a3a;
+    --code-text: #e8eef7;
+    --code-keyword: #ff79c6;
+    --code-string: #f1fa8c;
+    --code-comment: #6272a4;
+    --code-function: #50fa7b;
+    --code-number: #bd93f9;
+    --text-dark: #1a2332;
+    --text-mid: #4a5568;
+    --text-light: #718096;
+    --accent-orange: #ff8c42;
+    --accent-green: #00b894;
+    --accent-purple: #6c5ce7;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: #0a1525;
+    color: var(--text-dark);
+    overflow: hidden;
+  }
+
+  .presentation {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    padding: 60px 80px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(40px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+
+  .slide-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* === Title slide === */
+  .slide.title {
+    background: linear-gradient(135deg, var(--itba-blue) 0%, #001a33 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .slide.title h1 {
+    font-size: 4.5rem;
+    font-weight: 800;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+    color: #ffffff;
+    text-shadow: 0 2px 20px rgba(0, 102, 204, 0.4);
+  }
+  .slide.title h2 {
+    font-size: 1.8rem;
+    font-weight: 400;
+    color: #ffffff;
+    opacity: 1;
+    margin-bottom: 60px;
+  }
+  .slide.title h2 strong {
+    color: #7dd3ff;
+    font-weight: 700;
+  }
+  .slide.title .tag {
+    display: inline-block;
+    padding: 8px 20px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 100px;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    backdrop-filter: blur(10px);
+  }
+  .slide.title .credits {
+    margin-top: 80px;
+    font-size: 0.95rem;
+    color: #ffffff;
+    opacity: 0.75;
+  }
+
+  /* === Section header === */
+  .slide.section {
+    background: linear-gradient(135deg, var(--itba-accent) 0%, var(--itba-blue) 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+  }
+  .slide.section .section-num {
+    font-size: 8rem;
+    font-weight: 200;
+    opacity: 0.3;
+    line-height: 1;
+  }
+  .slide.section h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-top: 10px;
+  }
+  .slide.section p {
+    font-size: 1.3rem;
+    color: #ffffff;
+    opacity: 1;
+    margin-top: 20px;
+    max-width: 700px;
+    line-height: 1.5;
+  }
+  .slide.section h1 {
+    color: #ffffff;
+  }
+  .slide.section p strong {
+    color: #ffe07d;
+    font-weight: 700;
+  }
+  .slide.section p em {
+    color: #aee0ff;
+    font-style: normal;
+    background: rgba(255,255,255,0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .slide.title .credits p {
+    color: #ffffff;
+    opacity: 0.85;
+  }
+
+  /* === Content slide === */
+  .slide h1.title {
+    font-size: 2.4rem;
+    color: var(--itba-blue);
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+  }
+  .slide .subtitle {
+    font-size: 1.1rem;
+    color: var(--text-light);
+    margin-bottom: 40px;
+    border-bottom: 2px solid var(--itba-light);
+    padding-bottom: 16px;
+  }
+  .slide h2 {
+    font-size: 1.5rem;
+    color: var(--itba-blue);
+    margin: 24px 0 12px;
+    font-weight: 600;
+  }
+  .slide p {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: var(--text-mid);
+    margin-bottom: 14px;
+  }
+  .slide ul, .slide ol {
+    margin: 12px 0 16px 24px;
+    color: var(--text-mid);
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+  .slide li { margin-bottom: 8px; }
+  .slide li strong { color: var(--itba-blue); font-weight: 600; }
+  .slide code.inline {
+    background: var(--itba-light);
+    color: var(--itba-blue);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.95em;
+    font-family: "SF Mono", Monaco, monospace;
+    font-weight: 500;
+  }
+
+  /* === Code blocks === */
+  pre.code {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 20px 24px;
+    border-radius: 12px;
+    font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 16px 0;
+    border-left: 4px solid var(--itba-accent);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  pre.code .kw { color: var(--code-keyword); }
+  pre.code .str { color: var(--code-string); }
+  pre.code .com { color: var(--code-comment); font-style: italic; }
+  pre.code .fn { color: var(--code-function); }
+  pre.code .num { color: var(--code-number); }
+  pre.code .cls { color: #8be9fd; }
+
+  /* === Concept boxes === */
+  .concept-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin: 20px 0;
+  }
+  .concept-grid.three { grid-template-columns: repeat(3, 1fr); }
+  .concept-grid.four { grid-template-columns: repeat(4, 1fr); }
+
+  .concept-box {
+    background: var(--itba-pale);
+    border: 1px solid var(--itba-light);
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .concept-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,51,102,0.1);
+  }
+  .concept-box .icon {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+  .concept-box h3 {
+    color: var(--itba-blue);
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .concept-box p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-mid);
+    margin: 0;
+  }
+
+  /* === Diagram === */
+  .diagram {
+    margin: 30px auto;
+    display: block;
+    max-width: 100%;
+  }
+
+  /* === Highlight callouts === */
+  .callout {
+    background: linear-gradient(135deg, #fff5e6 0%, #fff9ee 100%);
+    border-left: 4px solid var(--accent-orange);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .callout strong { color: #c25700; }
+
+  .callout.info {
+    background: linear-gradient(135deg, #e8f0f8 0%, #f5f8fc 100%);
+    border-left-color: var(--itba-accent);
+  }
+  .callout.info strong { color: var(--itba-blue); }
+
+  .callout.success {
+    background: linear-gradient(135deg, #e8f7f3 0%, #f0faf6 100%);
+    border-left-color: var(--accent-green);
+  }
+  .callout.success strong { color: #006955; }
+
+  /* === Flow steps === */
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 18px;
+    background: var(--itba-pale);
+    border-radius: 10px;
+    border-left: 4px solid var(--itba-accent);
+  }
+  .flow-step .step-num {
+    background: var(--itba-blue);
+    color: white;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .flow-step .step-content {
+    flex: 1;
+    line-height: 1.5;
+  }
+  .flow-step .step-content strong {
+    color: var(--itba-blue);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* === Tool card === */
+  .tool-card {
+    background: white;
+    border: 2px solid var(--itba-light);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 4px 16px rgba(0,51,102,0.05);
+  }
+  .tool-card .tool-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .tool-card .tool-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--itba-accent), var(--itba-blue));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .tool-card .tool-name {
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 1.1rem;
+    color: var(--itba-blue);
+    font-weight: 600;
+  }
+  .tool-card .tool-desc {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-top: 2px;
+  }
+
+  /* === Tables === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  table th {
+    background: var(--itba-blue);
+    color: white;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--itba-light);
+    font-size: 0.95rem;
+    color: var(--text-mid);
+  }
+  table tr:last-child td { border-bottom: none; }
+  table code {
+    background: var(--itba-light);
+    color: var(--itba-blue);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 0.88em;
+  }
+
+  /* === Two column === */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin: 20px 0;
+  }
+
+  /* === Chat mock === */
+  .chat-mock {
+    background: var(--itba-pale);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    border: 1px solid var(--itba-light);
+  }
+  .chat-msg {
+    margin: 8px 0;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 80%;
+  }
+  .chat-msg.user {
+    background: var(--itba-accent);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 2px;
+  }
+  .chat-msg.bot {
+    background: white;
+    color: var(--text-dark);
+    border: 1px solid var(--itba-light);
+    border-bottom-left-radius: 2px;
+  }
+  .chat-msg.tool {
+    background: #fff9ee;
+    color: #8b5a00;
+    border: 1px dashed #ffc878;
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 0.85rem;
+    max-width: 90%;
+    margin: 4px auto 4px 20px;
+  }
+  .chat-msg.tool::before {
+    content: "⚙ tool call: ";
+    font-weight: 600;
+  }
+
+  /* === Controls === */
+  .controls {
+    position: fixed;
+    bottom: 20px;
+    right: 30px;
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+  }
+  .ctrl-btn {
+    background: rgba(0, 51, 102, 0.8);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    backdrop-filter: blur(10px);
+    transition: background 0.2s, transform 0.2s;
+  }
+  .ctrl-btn:hover {
+    background: var(--itba-blue);
+    transform: scale(1.05);
+  }
+
+  /* === Progress === */
+  .progress {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: var(--itba-accent);
+    z-index: 100;
+    transition: width 0.3s ease;
+  }
+  .slide-counter {
+    position: fixed;
+    bottom: 24px;
+    left: 30px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-family: "SF Mono", Monaco, monospace;
+    z-index: 100;
+    background: rgba(255,255,255,0.9);
+    padding: 6px 12px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+  }
+
+  /* === Diagram styles === */
+  .arch-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 30px 0;
+  }
+  .arch-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  .arch-box {
+    background: white;
+    border: 2px solid var(--itba-accent);
+    border-radius: 10px;
+    padding: 12px 20px;
+    color: var(--itba-blue);
+    font-weight: 600;
+    text-align: center;
+    min-width: 140px;
+    box-shadow: 0 2px 8px rgba(0,51,102,0.08);
+  }
+  .arch-box.primary {
+    background: var(--itba-blue);
+    color: white;
+  }
+  .arch-box.accent {
+    background: var(--accent-orange);
+    color: white;
+    border-color: var(--accent-orange);
+  }
+  .arch-box.success {
+    background: var(--accent-green);
+    color: white;
+    border-color: var(--accent-green);
+  }
+  .arch-box.purple {
+    background: var(--accent-purple);
+    color: white;
+    border-color: var(--accent-purple);
+  }
+  .arch-box small {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  .arrow-down {
+    color: var(--itba-accent);
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  /* === Hints === */
+  .keyhint {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    background: rgba(255,255,255,0.9);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+  .keyhint kbd {
+    background: var(--itba-light);
+    color: var(--itba-blue);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 0 2px;
+  }
+
+  /* === Scrollbar === */
+  .slide::-webkit-scrollbar { width: 8px; }
+  .slide::-webkit-scrollbar-track { background: transparent; }
+  .slide::-webkit-scrollbar-thumb { background: var(--itba-light); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="keyhint">
+  Navegá con <kbd>←</kbd> <kbd>→</kbd> o <kbd>Espacio</kbd>
+</div>
+
+<div class="presentation">
+
+  <!-- ============ SLIDE 1: TÍTULO ============ -->
+  <div class="slide title active">
+    <div>
+      <div class="tag">Workshop · ITBA</div>
+      <h1 style="margin-top: 30px;">Ada</h1>
+      <h2>Construyendo un agente académico con <strong>Google ADK</strong></h2>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 2: AGENDA ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">¿Qué vamos a ver?</h1>
+      <div class="subtitle">Una recorrida didáctica por todos los componentes de un agente moderno</div>
+
+      <div class="concept-grid">
+        <div class="concept-box">
+          <div class="icon">🤖</div>
+          <h3>1. ¿Qué es un agente?</h3>
+          <p>Diferencia entre un chatbot tradicional y un agente con tools.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">🧰</div>
+          <h3>2. Google ADK</h3>
+          <p>El framework que usamos: qué hace, qué nos resuelve.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">🧠</div>
+          <h3>3. El orquestador y el LLM</h3>
+          <p>Cómo se decide qué responder y cuándo invocar una tool.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">🔧</div>
+          <h3>4. Las tools de Ada</h3>
+          <p>Las 5 herramientas que tiene nuestro agente.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">📚</div>
+          <h3>5. Base de conocimiento (RAG)</h3>
+          <p>Cómo Ada "lee" los planes de estudio antes de responder.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">💾</div>
+          <h3>6. Persistencia con SQLite</h3>
+          <p>Cómo guardamos las inscripciones de verdad.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 3: ¿QUÉ ES UN AGENTE? ============ -->
+  <div class="slide section">
+    <div class="slide-inner">
+      <div class="section-num">01</div>
+      <h1>¿Qué es un agente?</h1>
+      <p>Un LLM por sí solo solo sabe generar texto. Un agente además puede <strong>actuar sobre el mundo</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 4: CHATBOT VS AGENTE ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Chatbot vs Agente</h1>
+      <div class="subtitle">La diferencia clave: capacidad de actuar</div>
+
+      <div class="two-col">
+        <div>
+          <h2>💬 Chatbot tradicional</h2>
+          <ul>
+            <li><strong>Input:</strong> texto del usuario</li>
+            <li><strong>Output:</strong> texto generado</li>
+            <li>No tiene acceso a datos reales</li>
+            <li>Inventa información si no sabe</li>
+            <li>Stateless: olvida todo entre mensajes</li>
+          </ul>
+          <div class="callout">
+            <strong>Limitación:</strong> "¿En qué materias estoy inscripto?" → "No tengo acceso al sistema académico del ITBA."
+          </div>
+        </div>
+        <div>
+          <h2>🤖 Agente con tools</h2>
+          <ul>
+            <li><strong>Input:</strong> texto del usuario</li>
+            <li><strong>Decide</strong> qué tool ejecutar</li>
+            <li><strong>Llama</strong> a APIs, bases de datos, sistemas reales</li>
+            <li>Razona con datos verídicos</li>
+            <li>Mantiene memoria de la sesión</li>
+          </ul>
+          <div class="callout success">
+            <strong>Ada:</strong> "¿Cuándo cursa Algoritmos?" → busca en el RAG → "Algoritmos (INFO-201) se cursa en 3er cuatrimestre…"
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 5: COMPONENTES ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Componentes de un agente</h1>
+      <div class="subtitle">Los 4 ingredientes que hacen que un LLM se convierta en agente</div>
+
+      <div class="concept-grid four">
+        <div class="concept-box">
+          <div class="icon">🧠</div>
+          <h3>LLM</h3>
+          <p>El "cerebro" que razona. En Ada: <code class="inline">gemini-2.5-flash</code>.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">🔧</div>
+          <h3>Tools</h3>
+          <p>Funciones que el LLM puede invocar. En Ada: 5 tools.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">📋</div>
+          <h3>System prompt</h3>
+          <p>Las instrucciones y personalidad del agente.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">🎼</div>
+          <h3>Orquestador</h3>
+          <p>El loop que coordina todo el flujo.</p>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <strong>Idea clave:</strong> El LLM no ejecuta las tools. Solo <em>decide cuál llamar y con qué argumentos</em>. El orquestador es quien las ejecuta y le devuelve el resultado al LLM para que continúe razonando.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 6: ¿QUÉ ES ADK? ============ -->
+  <div class="slide section">
+    <div class="slide-inner">
+      <div class="section-num">02</div>
+      <h1>Google ADK</h1>
+      <p>El framework que nos resuelve toda la "plomería" de construir un agente.</p>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 7: QUÉ ES ADK ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">¿Qué es Google ADK?</h1>
+      <div class="subtitle">Agent Development Kit — el SDK oficial de Google para construir agentes</div>
+
+      <p>ADK es un framework de Google que abstrae los componentes complejos de construir un agente, dejándote escribir solo la lógica de negocio. Está disponible en <strong>Python, Java, Go y TypeScript</strong> — en este proyecto usamos la versión Python.</p>
+
+      <p style="margin-top: 4px;">📖 Docs oficiales: <a href="https://adk.dev/get-started/" target="_blank" style="color: var(--itba-accent); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--itba-light);">adk.dev/get-started</a></p>
+
+      <h2>Lo que nos resuelve ADK</h2>
+      <table>
+        <tr><th>Componente</th><th>Lo que hace por vos</th></tr>
+        <tr><td><code>Agent</code></td><td>Encapsula modelo + prompt + tools + configuración de seguridad</td></tr>
+        <tr><td>Orquestador</td><td>Loop: usuario → LLM → ¿tool? → ejecutar → LLM → respuesta</td></tr>
+        <tr><td>Function calling</td><td>Convierte funciones Python en JSON schemas automáticamente</td></tr>
+        <tr><td>Sessions</td><td>Mantiene el historial de conversación (en memoria o persistido)</td></tr>
+        <tr><td><code>adk web</code></td><td>UI web lista para probar el agente, con trace de tool calls</td></tr>
+        <tr><td>Eval sets</td><td>Sistema de evaluación con casos de prueba</td></tr>
+      </table>
+
+      <div class="callout info">
+        <strong>Versión usada:</strong> ADK 1.32.0 con Python 3.12 y el SDK <code class="inline">google-genai</code> para los embeddings.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 8: DEFINIENDO UN AGENTE EN ADK ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Definiendo un agente en ADK</h1>
+      <div class="subtitle">El archivo <code class="inline">agent.py</code> de Ada — el "manifiesto" del agente</div>
+
+<pre class="code"><span class="kw">from</span> google.adk.agents.llm_agent <span class="kw">import</span> Agent
+<span class="kw">from</span> google.genai.types <span class="kw">import</span> GenerateContentConfig, SafetySetting, HarmCategory
+
+<span class="kw">from</span> .prompt <span class="kw">import</span> SYSTEM_INSTRUCTION
+<span class="kw">from</span> .tools <span class="kw">import</span> (
+    enroll_in_subject,
+    escalate_to_academic_advisor,
+    get_my_enrollments,
+    get_subject_enrollments,
+    search_knowledge_base,
+)
+
+root_agent = <span class="cls">Agent</span>(
+    model=<span class="str">"gemini-2.5-flash"</span>,        <span class="com"># el LLM</span>
+    name=<span class="str">"itba_academic_assistant"</span>,
+    description=<span class="str">"Asistente académico virtual del ITBA."</span>,
+    instruction=SYSTEM_INSTRUCTION,    <span class="com"># el system prompt</span>
+    tools=[                             <span class="com"># las funciones disponibles</span>
+        search_knowledge_base,
+        enroll_in_subject,
+        get_my_enrollments,
+        get_subject_enrollments,
+        escalate_to_academic_advisor,
+    ],
+)</pre>
+
+      <div class="callout">
+        <strong>Eso es todo.</strong> ADK toma esas funciones Python, lee sus docstrings, infiere los tipos y construye los JSON schemas que el LLM necesita. <strong>Cero boilerplate.</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 9: ARQUITECTURA ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Arquitectura completa de Ada</h1>
+      <div class="subtitle">Cómo se conectan todos los componentes</div>
+
+      <div class="arch-diagram">
+        <div class="arch-row">
+          <div class="arch-box accent">👤 Usuario<small>browser :8000</small></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="arch-row">
+          <div class="arch-box primary">ADK Web Server<small>FastAPI + UI</small></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="arch-row">
+          <div class="arch-box primary" style="background: var(--itba-accent);">Orquestador ADK<small>session + tool loop</small></div>
+        </div>
+        <div class="arrow-down">↕</div>
+        <div class="arch-row">
+          <div class="arch-box purple">Gemini 2.5 Flash<small>razonamiento + function calling</small></div>
+        </div>
+        <div class="arrow-down">↓ (cuando decide llamar una tool)</div>
+        <div class="arch-row">
+          <div class="arch-box">🔧 Tools<small>5 funciones Python</small></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="arch-row">
+          <div class="arch-box success">📚 ChromaDB<small>vector store (RAG)</small></div>
+          <div class="arch-box success">💾 SQLite<small>inscripciones</small></div>
+          <div class="arch-box">🌐 (futuro)<small>APIs reales del ITBA</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 10: ORQUESTADOR ============ -->
+  <div class="slide section">
+    <div class="slide-inner">
+      <div class="section-num">03</div>
+      <h1>El orquestador</h1>
+      <p>El "director de orquesta" que ADK provee out of the box.</p>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 11: LOOP DEL ORQUESTADOR ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">El loop del orquestador</h1>
+      <div class="subtitle">Lo que pasa entre tu input y la respuesta del agente</div>
+
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Recibe el input del usuario</strong>
+            "Quiero anotarme en Algoritmos, mi legajo es 12345"
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Arma el contexto</strong>
+            Junta el system prompt + historial de la sesión + el nuevo mensaje + schemas de las tools disponibles.
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Manda todo al LLM</strong>
+            Gemini procesa y devuelve: o bien un texto final, o bien una <em>function call</em> con nombre de tool y argumentos.
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Si hay function call: ejecuta la tool</strong>
+            Llama a la función Python con los argumentos que el LLM pidió. Captura el resultado (un dict).
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <strong>Devuelve el resultado al LLM</strong>
+            Le inyecta el output de la tool como nuevo turno de contexto, y vuelve al paso 3.
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <strong>Cuando el LLM responde con texto final → al usuario</strong>
+            El orquestador termina el ciclo y persiste todo en la sesión.
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <strong>Este loop puede iterar varias veces.</strong> El LLM puede llamar a 1, 2, 5 tools en cadena antes de responder al usuario. Por ejemplo: primero buscar el código de la materia con <code class="inline">search_knowledge_base</code>, después inscribir con <code class="inline">enroll_in_subject</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 12: SYSTEM PROMPT ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">El system prompt: la personalidad de Ada</h1>
+      <div class="subtitle">Archivo <code class="inline">prompt.py</code> — define quién es, qué hace y cómo</div>
+
+      <p>El system prompt es el primer mensaje que ve el LLM en cada conversación. Define el comportamiento del agente. Fragmento real del prompt de Ada:</p>
+
+<pre class="code"><span class="com"># prompt.py</span>
+
+SYSTEM_INSTRUCTION = <span class="str">"""Sos **Ada**, el asistente académico virtual del
+**ITBA (Instituto Tecnológico de Buenos Aires)**.
+
+## Tu personalidad
+- Hablás en español argentino (vos, sos, tenés).
+- Sos claro y conciso.
+
+## Inscripciones
+Para inscribir a un alumno necesitás obligatoriamente:
+- Legajo del alumno
+- Código de materia (ej: INFO-201)
+- Nombre de la materia
+
+Flujo correcto:
+1. Si el alumno menciona una materia pero no su código,
+   buscalo en `search_knowledge_base` primero.
+2. Confirmá los datos antes de ejecutar la inscripción.
+3. Usá `enroll_in_subject` para inscribir.
+
+## Reglas
+- **Nunca** inventes códigos de materias.
+- **Nunca** inscribas sin legajo confirmado.
+"""</span></pre>
+
+      <div class="callout">
+        <strong>Lección de diseño:</strong> el system prompt no es solo "tono". Es donde codificás las reglas de negocio que el LLM debe seguir. Acá decidimos que <em>nunca</em> debe inscribir sin legajo.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 13: TOOLS ============ -->
+  <div class="slide section">
+    <div class="slide-inner">
+      <div class="section-num">04</div>
+      <h1>Tools: cómo el LLM actúa</h1>
+      <p>Funciones Python comunes que el LLM puede invocar mediante <em>function calling</em>.</p>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 14: ANATOMÍA DE UNA TOOL ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Anatomía de una tool</h1>
+      <div class="subtitle">Una función Python "normal" que ADK convierte automáticamente</div>
+
+<pre class="code"><span class="kw">def</span> <span class="fn">enroll_in_subject</span>(student_id: <span class="cls">str</span>, subject_code: <span class="cls">str</span>, subject_name: <span class="cls">str</span>) -> <span class="cls">dict</span>:
+    <span class="str">"""Inscribe a un alumno en una materia. Verifica primero si ya está inscripto;
+    si no lo está, realiza la inscripción y la persiste en la base de datos.
+
+    Args:
+        student_id: Legajo o DNI del alumno (ej: 12345 o 40123456).
+        subject_code: Código de la materia (ej: INFO-201).
+        subject_name: Nombre completo de la materia.
+
+    Returns:
+        Resultado de la inscripción: éxito, ya inscripto, o error.
+    """</span>
+    <span class="kw">if</span> db.is_enrolled(student_id, subject_code):
+        <span class="kw">return</span> {<span class="str">"success"</span>: <span class="kw">False</span>, <span class="str">"already_enrolled"</span>: <span class="kw">True</span>, ...}
+
+    record = db.enroll(student_id, subject_code, subject_name)
+    <span class="kw">return</span> {<span class="str">"success"</span>: <span class="kw">True</span>, **record, <span class="str">"message"</span>: <span class="str">"Inscripción exitosa..."</span>}</pre>
+
+      <div class="concept-grid three">
+        <div class="concept-box">
+          <div class="icon">📝</div>
+          <h3>Docstring</h3>
+          <p>Se convierte en la descripción para el LLM. <strong>Es lo que el LLM lee para decidir si usar la tool.</strong></p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">🏷️</div>
+          <h3>Type hints</h3>
+          <p>Definen el JSON schema de los parámetros. <code class="inline">str</code> → string, <code class="inline">int</code> → integer, etc.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">📤</div>
+          <h3>Return dict</h3>
+          <p>El dict que retornás se le inyecta al LLM como contexto para que arme la respuesta final.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 15: TOOLS DE ADA ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Las 5 tools de Ada</h1>
+      <div class="subtitle">Catálogo completo de herramientas del agente</div>
+
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🔍</div>
+          <div>
+            <div class="tool-name">search_knowledge_base(query)</div>
+            <div class="tool-desc">Búsqueda semántica en la base de conocimiento</div>
+          </div>
+        </div>
+        <p>Busca en ChromaDB los 3 fragmentos más relevantes de los documentos del ITBA. Devuelve título, fuente, contenido y score de relevancia. <strong>Lectura — sin efectos.</strong></p>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">✍️</div>
+          <div>
+            <div class="tool-name">enroll_in_subject(student_id, subject_code, subject_name)</div>
+            <div class="tool-desc">Inscribe a un alumno en una materia</div>
+          </div>
+        </div>
+        <p>Primero verifica si el alumno ya está inscripto (constraint UNIQUE). Si no, inserta el registro en SQLite. <strong>Escritura — tiene efectos.</strong></p>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">📋</div>
+          <div>
+            <div class="tool-name">get_my_enrollments(student_id)</div>
+            <div class="tool-desc">Lista las materias de un alumno</div>
+          </div>
+        </div>
+        <p>Query a SQLite filtrando por legajo. Devuelve todas las materias en las que el alumno está anotado, con fecha de inscripción.</p>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">👥</div>
+          <div>
+            <div class="tool-name">get_subject_enrollments(subject_code)</div>
+            <div class="tool-desc">Lista los alumnos de una materia</div>
+          </div>
+        </div>
+        <p>Query a SQLite filtrando por código de materia. Útil para roles administrativos.</p>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🆘</div>
+          <div>
+            <div class="tool-name">escalate_to_academic_advisor(issue_summary, urgency)</div>
+            <div class="tool-desc">Deriva a un asesor humano</div>
+          </div>
+        </div>
+        <p>Genera un ticket <code class="inline">ITBA-XXXXX</code> con tiempo de respuesta estimado. Para casos que el agente no puede resolver solo.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 16: RAG ============ -->
+  <div class="slide section">
+    <div class="slide-inner">
+      <div class="section-num">05</div>
+      <h1>RAG: la base de conocimiento</h1>
+      <p>Cómo Ada "lee" los planes de estudio del ITBA antes de responder.</p>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 17: ¿QUÉ ES RAG? ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">¿Qué es RAG?</h1>
+      <div class="subtitle">Retrieval-Augmented Generation</div>
+
+      <p>Los LLMs tienen un conocimiento general, pero no saben nada del ITBA en particular. <strong>RAG</strong> es la técnica de inyectarle al LLM información específica recuperada de una base de documentos, justo cuando la necesita.</p>
+
+      <div class="two-col">
+        <div>
+          <h2>❌ Sin RAG</h2>
+          <div class="chat-mock">
+            <div class="chat-msg user">¿Qué cursa Algoritmos en el ITBA?</div>
+            <div class="chat-msg bot">No tengo información actualizada sobre el plan de estudios del ITBA. Te recomiendo consultar el sitio oficial...</div>
+          </div>
+        </div>
+        <div>
+          <h2>✅ Con RAG</h2>
+          <div class="chat-mock">
+            <div class="chat-msg user">¿Qué cursa Algoritmos en el ITBA?</div>
+            <div class="chat-msg tool">search_knowledge_base("Algoritmos correlativas ITBA")</div>
+            <div class="chat-msg bot">Algoritmos (INFO-201) se cursa en 3er cuatrimestre. Sus correlativas son INFO-103 (Introducción a la Programación) aprobada y INFO-106 (Análisis Matemático II) regularizada.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout success">
+        <strong>Por qué funciona:</strong> el LLM no "memoriza" los planes de estudio. Los recibe como contexto en cada consulta, y los razona en el momento. Esto evita alucinaciones y permite actualizar la información sin re-entrenar nada.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 18: PIPELINE RAG ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">El pipeline RAG en dos fases</h1>
+      <div class="subtitle">Indexación (offline) y búsqueda (online)</div>
+
+      <h2>🛠️ Fase 1: Indexación — corre una sola vez con <code class="inline">python ingest.py</code></h2>
+
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Lee los 5 docs Markdown</strong> de <code class="inline">my_agent/rag/documents/</code>: carreras, planes de informática, industrial, electrónica, admisión.
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Chunking:</strong> divide cada doc en pedazos de 400 palabras con 50 de overlap. Esto evita que se pierda contexto entre chunks vecinos.
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Embedding:</strong> cada chunk se manda al modelo <code class="inline">gemini-embedding-001</code>, que devuelve un vector numérico de alta dimensión que "captura" su significado.
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Almacenamiento:</strong> los vectores + textos + metadata (fuente, título) se guardan en ChromaDB, un vector store local (sqlite-based).
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <strong>Resultado:</strong> 5 documentos → 10 chunks indexados en <code class="inline">my_agent/rag/chroma_db/</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 19: PIPELINE RAG 2 ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Fase 2: Búsqueda en tiempo real</h1>
+      <div class="subtitle">Cada vez que el LLM llama a <code class="inline">search_knowledge_base(query)</code></div>
+
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>El LLM decide buscar.</strong> Pasa una query en lenguaje natural, ej: <code class="inline">"correlativas algoritmos informática"</code>.
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Embedding de la query.</strong> Se transforma en el mismo espacio vectorial que los chunks indexados (con <code class="inline">task_type="RETRIEVAL_QUERY"</code>).
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Similitud coseno.</strong> ChromaDB compara el vector de la query contra todos los vectores indexados y devuelve los <strong>3 más similares</strong>.
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <strong>Devolución al LLM.</strong> La tool retorna un dict con título, fuente, contenido y score de cada chunk. El LLM lo lee y arma su respuesta.
+          </div>
+        </div>
+      </div>
+
+<pre class="code"><span class="com"># rag/knowledge_base.py — fragmento clave</span>
+
+<span class="kw">def</span> <span class="fn">search</span>(query: <span class="cls">str</span>, n_results: <span class="cls">int</span> = <span class="num">3</span>) -> <span class="cls">list</span>[<span class="cls">dict</span>]:
+    query_embedding = genai_client.models.embed_content(
+        model=<span class="str">"gemini-embedding-001"</span>,
+        contents=query,
+        config=EmbedContentConfig(task_type=<span class="str">"RETRIEVAL_QUERY"</span>),
+    ).embeddings[<span class="num">0</span>].values
+
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=n_results,
+        include=[<span class="str">"documents"</span>, <span class="str">"metadatas"</span>, <span class="str">"distances"</span>],
+    )
+    <span class="kw">return</span> [...]  <span class="com"># [{text, source, title, relevance_score}, ...]</span></pre>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 19B (NUEVA): SIMILITUD COSENO ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">¿Por qué similitud coseno?</h1>
+      <div class="subtitle">La métrica detrás de la búsqueda semántica</div>
+
+      <p>Los embeddings son vectores en un espacio de alta dimensión (3072 dimensiones en <code class="inline">gemini-embedding-001</code>). Para comparar dos textos no nos interesa <em>qué tan lejos están</em> esos vectores, sino <em>en qué dirección apuntan</em>. La similitud coseno mide exactamente eso: el ángulo entre dos vectores.</p>
+
+      <h2>La fórmula</h2>
+<pre class="code"><span class="com"># Coseno del ángulo entre los vectores A y B</span>
+cos(θ) = (A · B) / (‖A‖ × ‖B‖)
+         <span class="com">  ▲              ▲</span>
+         <span class="com">  producto       magnitudes</span>
+         <span class="com">  punto          (longitud de cada vector)</span></pre>
+
+      <h2>Intuición geométrica</h2>
+      <svg viewBox="0 0 760 280" style="display: block; margin: 20px auto; max-width: 100%; background: #f5f8fc; border-radius: 12px; padding: 10px;">
+        <defs>
+          <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#0066cc"/>
+          </marker>
+          <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#00b894"/>
+          </marker>
+          <marker id="arrow-gray" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#a0aec0"/>
+          </marker>
+          <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 10 3, 0 6" fill="#e74c3c"/>
+          </marker>
+        </defs>
+
+        <!-- ejes -->
+        <line x1="50" y1="240" x2="730" y2="240" stroke="#cbd5e0" stroke-width="1"/>
+        <line x1="120" y1="20" x2="120" y2="260" stroke="#cbd5e0" stroke-width="1"/>
+
+        <!-- origen -->
+        <circle cx="120" cy="240" r="5" fill="#003366"/>
+
+        <!-- query vector (0°) -->
+        <line x1="120" y1="240" x2="290" y2="240" stroke="#0066cc" stroke-width="3" marker-end="url(#arrow-blue)"/>
+        <text x="300" y="245" fill="#0066cc" font-weight="700" font-size="14">Query: "Algoritmos"</text>
+
+        <!-- similar vector (~25°) -->
+        <line x1="120" y1="240" x2="285" y2="170" stroke="#00b894" stroke-width="3" marker-end="url(#arrow-green)"/>
+        <text x="300" y="170" fill="#00b894" font-weight="700" font-size="14">"Estructuras de datos"  ·  cos ≈ 0.92  ✓</text>
+
+        <!-- unrelated vector (90°) -->
+        <line x1="120" y1="240" x2="120" y2="60" stroke="#a0aec0" stroke-width="3" marker-end="url(#arrow-gray)"/>
+        <text x="135" y="75" fill="#718096" font-weight="700" font-size="14">"Aranceles"  ·  cos ≈ 0.05  ✗</text>
+
+        <!-- opposite (~150°) -->
+        <line x1="120" y1="240" x2="50" y2="200" stroke="#e74c3c" stroke-width="3" marker-end="url(#arrow-red)"/>
+        <text x="55" y="190" fill="#e74c3c" font-weight="700" font-size="14">tema opuesto · cos ≈ -0.8</text>
+
+        <!-- angle arc -->
+        <path d="M 180 240 A 60 60 0 0 0 175 215" stroke="#003366" stroke-width="1.5" fill="none" stroke-dasharray="3,3"/>
+        <text x="190" y="225" fill="#003366" font-size="12" font-style="italic">θ</text>
+      </svg>
+
+      <table>
+        <tr><th>Ángulo</th><th>cos(θ)</th><th>Significado semántico</th></tr>
+        <tr><td>0°</td><td><code>1.0</code></td><td>Vectores idénticos → mismo significado</td></tr>
+        <tr><td>25°</td><td><code>0.9</code></td><td>Muy relacionados, contexto similar</td></tr>
+        <tr><td>90°</td><td><code>0.0</code></td><td>Ortogonales → conceptos independientes</td></tr>
+        <tr><td>180°</td><td><code>-1.0</code></td><td>Direcciones opuestas → significados antagónicos</td></tr>
+      </table>
+
+      <div class="callout success">
+        <strong>¿Por qué no distancia euclidiana?</strong> Porque las frases <em>"perro"</em> y <em>"perro grande blanco peludo y juguetón"</em> tienen la <strong>misma dirección semántica</strong> pero distinta magnitud (el segundo texto produce un vector más largo). El coseno ignora la magnitud y se enfoca solo en la dirección — exactamente lo que queremos para medir similitud de significado.
+      </div>
+
+      <h2>En el código de Ada</h2>
+<pre class="code"><span class="com"># rag/knowledge_base.py — al crear la colección de ChromaDB</span>
+collection = client.create_collection(
+    name=<span class="str">"itba_knowledge"</span>,
+    metadata={<span class="str">"hnsw:space"</span>: <span class="str">"cosine"</span>},  <span class="com"># ← métrica usada</span>
+)
+
+<span class="com"># ChromaDB devuelve "distance" (1 - cos), por eso lo invertimos:</span>
+relevance_score = round(<span class="num">1</span> - dist, <span class="num">3</span>)  <span class="com"># cosine distance → similarity</span></pre>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 20: SQLITE ============ -->
+  <div class="slide section">
+    <div class="slide-inner">
+      <div class="section-num">06</div>
+      <h1>Persistencia con SQLite</h1>
+      <p>Cómo guardamos las inscripciones reales (sin servidor, sin configuración).</p>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 21: ESQUEMA DB ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">El esquema de inscripciones</h1>
+      <div class="subtitle">Archivo <code class="inline">my_agent/inscripciones.db</code> — se crea automáticamente</div>
+
+<pre class="code"><span class="com"># db.py — schema de la tabla</span>
+
+<span class="kw">def</span> <span class="fn">_init_db</span>(conn: sqlite3.Connection) -> <span class="kw">None</span>:
+    conn.execute(<span class="str">"""
+        CREATE TABLE IF NOT EXISTS inscripciones (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id      TEXT NOT NULL,
+            subject_code    TEXT NOT NULL,
+            subject_name    TEXT NOT NULL,
+            inscripto_en    TEXT NOT NULL,
+            UNIQUE(student_id, subject_code)
+        )
+    """</span>)
+    conn.commit()</pre>
+
+      <div class="callout success">
+        <strong>El secreto:</strong> el constraint <code class="inline">UNIQUE(student_id, subject_code)</code>. Hace que sea físicamente imposible duplicar inscripciones a nivel de base de datos, sin importar lo que haga el agente.
+      </div>
+
+      <h2>Las 3 operaciones que expone <code class="inline">db.py</code></h2>
+      <table>
+        <tr><th>Función</th><th>Hace</th></tr>
+        <tr><td><code>is_enrolled(student_id, code)</code></td><td>SELECT 1 → devuelve <code>True</code> o <code>False</code></td></tr>
+        <tr><td><code>enroll(student_id, code, name)</code></td><td>INSERT con timestamp ISO</td></tr>
+        <tr><td><code>get_enrollments(student_id)</code></td><td>SELECT * filtrando por alumno</td></tr>
+        <tr><td><code>get_subject_enrollments(code)</code></td><td>SELECT * filtrando por materia</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 22: VERIFICAR + INSERTAR ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Defensa en dos capas → idempotencia</h1>
+      <div class="subtitle">Cómo <code class="inline">enroll_in_subject</code> evita inscripciones duplicadas</div>
+
+      <p><strong>Idempotencia</strong> = ejecutar la misma operación N veces tiene el mismo efecto que ejecutarla una sola vez. Llamar 10 veces a "anotame en Videojuegos" debe dejar al alumno anotado <em>una</em> sola vez, no diez.</p>
+
+      <h2>🛡️ Chequeo #1 — en Python (<code class="inline">tools.py</code>)</h2>
+      <p style="margin-top: -8px; font-size: 0.95rem;">Para <strong>experiencia de usuario</strong>: si ya está anotado, responde amablemente sin tirar error.</p>
+<pre class="code"><span class="kw">def</span> <span class="fn">enroll_in_subject</span>(student_id, subject_code, subject_name) -> <span class="cls">dict</span>:
+    <span class="kw">if</span> db.is_enrolled(student_id, subject_code):    <span class="com"># ← CHEQUEO 1</span>
+        <span class="kw">return</span> {<span class="str">"success"</span>: <span class="kw">False</span>, <span class="str">"already_enrolled"</span>: <span class="kw">True</span>,
+                <span class="str">"message"</span>: <span class="str">f"Ya estás inscripto en {subject_name}."</span>}
+
+    record = db.enroll(student_id, subject_code, subject_name)
+    <span class="kw">return</span> {<span class="str">"success"</span>: <span class="kw">True</span>, **record}</pre>
+
+      <h2>🛡️ Chequeo #2 — en SQLite (<code class="inline">db.py</code>)</h2>
+      <p style="margin-top: -8px; font-size: 0.95rem;">Para <strong>integridad de datos</strong>: red de seguridad contra race conditions (dos requests simultáneos que pasen el chequeo #1 a la vez).</p>
+<pre class="code"><span class="kw">CREATE TABLE</span> <span class="kw">IF NOT EXISTS</span> inscripciones (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id      TEXT NOT NULL,
+    subject_code    TEXT NOT NULL,
+    subject_name    TEXT NOT NULL,
+    inscripto_en    TEXT NOT NULL,
+    <span class="kw">UNIQUE</span>(student_id, subject_code)    <span class="com">-- ← CHEQUEO 2</span>
+)</pre>
+
+      <div class="callout">
+        <strong>¿Por qué dos capas y no una?</strong> El chequeo de Python solo no alcanza: si dos requests llegan al mismo tiempo, ambos pueden ver <code class="inline">is_enrolled = False</code> y los dos insertarían. El UNIQUE de SQL solo tampoco alcanza: el usuario vería un error técnico horrible. Juntos = robustos y amigables.
+      </div>
+
+      <h2>Ejemplo real, verificado en la DB</h2>
+<pre class="code">$ sqlite3 my_agent/inscripciones.db <span class="str">"SELECT * FROM inscripciones;"</span>
+<span class="num">1</span>|<span class="num">39071</span>|INFO-410|Videojuegos|2026-05-14T14:52:36.563346</pre>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 23: FLUJO COMPLETO ============ -->
+  <div class="slide section">
+    <div class="slide-inner">
+      <div class="section-num">07</div>
+      <h1>Un flujo completo</h1>
+      <p>Veamos qué pasa cuando un alumno escribe: <em>"Quiero anotarme en Videojuegos"</em></p>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 24: FLOW EXAMPLE ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">"Quiero anotarme en Videojuegos"</h1>
+      <div class="subtitle">Trace completo de lo que pasa adentro</div>
+
+      <div class="chat-mock">
+        <div class="chat-msg user">Quiero anotarme en Videojuegos, mi legajo es 39071</div>
+
+        <div class="chat-msg tool">search_knowledge_base("Videojuegos código materia informática")</div>
+
+        <div class="chat-msg tool">→ {found: true, results: [{title: "Materias electivas", content: "...Videojuegos (INFO-410)..."}]}</div>
+
+        <div class="chat-msg tool">enroll_in_subject(student_id="39071", subject_code="INFO-410", subject_name="Videojuegos")</div>
+
+        <div class="chat-msg tool">→ {success: true, inscripto_en: "14/05/2026 14:52", message: "Inscripción exitosa..."}</div>
+
+        <div class="chat-msg bot">¡Listo! Te inscribí con éxito en la materia <strong>Videojuegos (INFO-410)</strong>. Tu inscripción quedó registrada el 14/05/2026. ¡Mucha suerte con la cursada! ¿Hay algo más en lo que te pueda ayudar?</div>
+      </div>
+
+      <div class="callout info">
+        <strong>Lo importante:</strong> el LLM eligió por sí solo encadenar 2 tools — primero buscó el código en el RAG y después inscribió. Eso lo hizo porque <em>el system prompt se lo indica</em> ("si el alumno menciona la materia pero no su código, buscalo primero").
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 25: FUNCTION CALLING ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Función calling: cómo el LLM "llama" a una tool</h1>
+      <div class="subtitle">El protocolo detrás de las llamadas a tools</div>
+
+      <p>El LLM nunca ejecuta código. Solo emite un mensaje estructurado pidiendo que se ejecute. ADK lo intercepta, ejecuta la función, y le devuelve el resultado.</p>
+
+      <h2>Lo que devuelve el LLM cuando quiere llamar una tool:</h2>
+<pre class="code">{
+  <span class="str">"tool_calls"</span>: [
+    {
+      <span class="str">"name"</span>: <span class="str">"enroll_in_subject"</span>,
+      <span class="str">"arguments"</span>: {
+        <span class="str">"student_id"</span>: <span class="str">"39071"</span>,
+        <span class="str">"subject_code"</span>: <span class="str">"INFO-410"</span>,
+        <span class="str">"subject_name"</span>: <span class="str">"Videojuegos"</span>
+      }
+    }
+  ]
+}</pre>
+
+      <h2>Lo que ADK le inyecta de vuelta al LLM:</h2>
+<pre class="code">{
+  <span class="str">"role"</span>: <span class="str">"tool"</span>,
+  <span class="str">"name"</span>: <span class="str">"enroll_in_subject"</span>,
+  <span class="str">"content"</span>: {
+    <span class="str">"success"</span>: <span class="kw">true</span>,
+    <span class="str">"student_id"</span>: <span class="str">"39071"</span>,
+    <span class="str">"subject_code"</span>: <span class="str">"INFO-410"</span>,
+    <span class="str">"inscripto_en"</span>: <span class="str">"14/05/2026 14:52"</span>,
+    <span class="str">"message"</span>: <span class="str">"Inscripción exitosa en Videojuegos (INFO-410)."</span>
+  }
+}</pre>
+
+      <div class="callout success">
+        <strong>Esto es todo el "truco":</strong> el LLM y el código se comunican vía JSON estructurado. ADK abstrae todo el manejo del protocolo, los reintentos, el parseo y la inyección de resultados.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 25B (NUEVA): API KEY ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">🔑 La API key de Google</h1>
+      <div class="subtitle">El único secreto que necesita Ada para funcionar</div>
+
+      <p>El proyecto usa <strong>una sola key</strong> (<code class="inline">GOOGLE_API_KEY</code>) para dos cosas:</p>
+      <ul>
+        <li>📡 Llamar al modelo <strong>Gemini 2.5 Flash</strong> (el cerebro del agente)</li>
+        <li>🧮 Generar <strong>embeddings</strong> con <code class="inline">gemini-embedding-001</code> (para el RAG)</li>
+      </ul>
+
+      <h2>1. Obtener la key — Google AI Studio</h2>
+      <p>Andá a <a href="https://aistudio.google.com/apikey" target="_blank" style="color: var(--itba-accent); font-weight: 600; text-decoration: none; border-bottom: 2px solid var(--itba-light);">aistudio.google.com/apikey</a> → iniciá sesión con cualquier cuenta de Google → <strong>"Create API key"</strong>. Te da una string del tipo <code class="inline">AIzaSyB...</code> (≈39 caracteres). El tier gratuito alcanza para experimentar (1500 requests/día de Flash).</p>
+
+      <h2>2. Guardarla en <code class="inline">my_agent/.env</code></h2>
+<pre class="code"><span class="com"># my_agent/.env  (NO commitear nunca, debe estar en .gitignore)</span>
+GOOGLE_API_KEY=AIzaSyB-tu-key-real-acá
+GOOGLE_GENAI_USE_VERTEXAI=FALSE  <span class="com"># usar la API pública de Gemini</span></pre>
+
+      <h2>3. Cómo la lee el código — tres caminos distintos</h2>
+      <table>
+        <tr><th>Cliente</th><th>Cómo carga la key</th></tr>
+        <tr><td><strong>ADK</strong> (al hacer <code>adk web</code>)</td><td>Detecta <code>.env</code> automáticamente al lado del agente</td></tr>
+        <tr><td><strong>RAG</strong> (<code>knowledge_base.py</code>)</td><td><code>os.environ.get("GOOGLE_API_KEY")</code> directo</td></tr>
+        <tr><td><strong>Script</strong> (<code>ingest.py</code>)</td><td><code>load_dotenv(".env")</code> con python-dotenv</td></tr>
+      </table>
+
+      <div class="callout">
+        <strong>⚠ Seguridad — no negociable:</strong>
+        <ul style="margin-top: 8px;">
+          <li>El <code class="inline">.env</code> <strong>nunca</strong> se commitea (poner en <code class="inline">.gitignore</code>).</li>
+          <li>Subir un <code class="inline">.env.example</code> sin valor real, así otros saben qué variables necesitan.</li>
+          <li>Si subiste una key por accidente a GitHub → <strong>revocala ya</strong> en AI Studio y generá una nueva. Los bots escanean repos públicos en minutos.</li>
+          <li>En producción no se usa <code class="inline">.env</code>: se inyectan via Secret Manager / variables del runtime.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 26: CÓMO LEVANTARLO ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">¿Cómo lo levanto?</h1>
+      <div class="subtitle">3 comandos para tenerlo corriendo</div>
+
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <strong>Configurar la API key de Google</strong>
+            En <code class="inline">my_agent/.env</code> →  <code class="inline">GOOGLE_API_KEY=tu_clave</code>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <strong>Indexar la base de conocimiento</strong>
+            <code class="inline">python ingest.py</code> → embeddings + ChromaDB
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <strong>Levantar la UI web</strong>
+            <code class="inline">adk web</code> → abre <code class="inline">http://127.0.0.1:8000</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <strong>La UI web de ADK es oro para debuggear.</strong> Muestra el trace completo: cada tool call con sus argumentos, cada respuesta del LLM, el contexto entero. Imprescindible para entender por qué el agente hizo lo que hizo.
+      </div>
+
+      <h2>Estructura final del proyecto</h2>
+<pre class="code">agente_austral_v1/
+├── ingest.py                          <span class="com"># indexa el RAG</span>
+└── my_agent/
+    ├── agent.py                       <span class="com"># define el Agent de ADK</span>
+    ├── prompt.py                      <span class="com"># system prompt de Ada</span>
+    ├── tools.py                       <span class="com"># 5 tools del agente</span>
+    ├── db.py                          <span class="com"># SQLite de inscripciones</span>
+    ├── inscripciones.db               <span class="com"># BD real (autogenerada)</span>
+    ├── .env                           <span class="com"># GOOGLE_API_KEY</span>
+    └── rag/
+        ├── knowledge_base.py          <span class="com"># motor RAG</span>
+        ├── chroma_db/                 <span class="com"># vector store</span>
+        └── documents/                 <span class="com"># 5 docs ITBA</span></pre>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 27: CONCEPTOS CLAVE ============ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <h1 class="title">Conceptos clave para llevarse</h1>
+      <div class="subtitle">Lo importante de este workshop</div>
+
+      <div class="concept-grid">
+        <div class="concept-box">
+          <div class="icon">🎯</div>
+          <h3>Un agente no es magia</h3>
+          <p>Es un LLM + tools + un loop que las conecta. Todo lo demás es prompt engineering y buen software.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">🔧</div>
+          <h3>Las tools son funciones Python</h3>
+          <p>Nada de DSLs ni configuraciones raras. Docstrings y type hints son tu API hacia el LLM.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">📋</div>
+          <h3>El system prompt es código</h3>
+          <p>Reglas de negocio importantes van acá. Tratalo como un archivo de configuración crítico.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">📚</div>
+          <h3>RAG = conocimiento fresco</h3>
+          <p>Para que el LLM "sepa" cosas específicas (planes de estudio, políticas, productos), usá RAG.</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">💾</div>
+          <h3>Persistí lo importante</h3>
+          <p>SQLite es suficiente para empezar. Defensa en profundidad con constraints (UNIQUE).</p>
+        </div>
+        <div class="concept-box">
+          <div class="icon">🧪</div>
+          <h3>Iterá con la UI de ADK</h3>
+          <p>Ver el trace de tool calls es la mejor manera de entender y mejorar el comportamiento del agente.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 28: CIERRE ============ -->
+  <div class="slide title">
+    <div>
+      <div class="tag">¿Preguntas?</div>
+      <h1 style="margin-top: 30px;">¡Gracias!</h1>
+      <h2>Ahora a construir el próximo agente</h2>
+      <div class="credits">
+        <p style="margin: 8px 0; opacity: 0.7;">Andrés D'Ambrosio · MercadoLibre · ITBA</p>
+        <p style="margin: 8px 0; opacity: 0.5; font-size: 0.85rem;">Construido en vivo con Claude Code y Google ADK 1.32</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="slide-counter">
+  <span id="current">1</span> / <span id="total">28</span>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" id="prev" title="Anterior (←)">‹</button>
+  <button class="ctrl-btn" id="next" title="Siguiente (→)">›</button>
+</div>
+
+<div class="progress" id="progress" style="width: 3.5%;"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  document.getElementById('total').textContent = total;
+
+  function showSlide(index) {
+    if (index < 0) index = 0;
+    if (index >= total) index = total - 1;
+    slides[current].classList.remove('active');
+    current = index;
+    slides[current].classList.add('active');
+    slides[current].scrollTop = 0;
+    document.getElementById('current').textContent = current + 1;
+    document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  document.getElementById('next').addEventListener('click', () => showSlide(current + 1));
+  document.getElementById('prev').addEventListener('click', () => showSlide(current - 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      showSlide(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      showSlide(current - 1);
+    } else if (e.key === 'Home') {
+      showSlide(0);
+    } else if (e.key === 'End') {
+      showSlide(total - 1);
+    }
+  });
+</script>
+
+</body>
+</html>

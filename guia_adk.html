@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google ADK — Guía de Agentes</title>
+  <style>
+    :root {
+      --yellow: #FFE600;
+      --yellow-dark: #E6CF00;
+      --blue: #3483FA;
+      --blue-dark: #2968C8;
+      --gray-bg: #F5F5F5;
+      --gray-border: #E0E0E0;
+      --text: #333333;
+      --text-light: #666666;
+      --code-bg: #1E1E2E;
+      --code-text: #CDD6F4;
+      --green: #2ECC71;
+      --orange: #E67E22;
+      --red: #E74C3C;
+      --purple: #9B59B6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text);
+      background: #fff;
+      line-height: 1.7;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--yellow);
+      padding: 48px 0 40px;
+      text-align: center;
+      border-bottom: 4px solid var(--yellow-dark);
+    }
+    header .badge {
+      display: inline-block;
+      background: var(--blue);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    header h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    header p {
+      font-size: 1.1rem;
+      color: #444;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* ── Nav ── */
+    nav {
+      background: #1a1a1a;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0 32px;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    nav a {
+      display: block;
+      color: #ccc;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 14px 16px;
+      white-space: nowrap;
+      border-bottom: 3px solid transparent;
+      transition: all .2s;
+    }
+    nav a:hover { color: #fff; border-bottom-color: var(--yellow); }
+
+    /* ── Layout ── */
+    .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+    /* ── Chapter headers ── */
+    .chapter {
+      padding: 64px 0 48px;
+      border-bottom: 1px solid var(--gray-border);
+    }
+    .chapter-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--yellow);
+      color: #1a1a1a;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .chapter h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .chapter .lead {
+      font-size: 1.05rem;
+      color: var(--text-light);
+      max-width: 640px;
+    }
+
+    /* ── Sections ── */
+    section { padding: 40px 0 0; }
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h3 .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--yellow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    p { margin-bottom: 16px; }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: var(--code-bg);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 20px 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
+    }
+    .code-block .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(255,255,255,.06);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .code-block .code-label {
+      font-size: 12px;
+      color: #888;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .code-block .dots { display: flex; gap: 6px; }
+    .code-block .dot {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .dot-red { background: #FF5F57; }
+    .dot-yellow { background: #FFBD2E; }
+    .dot-green { background: #28C840; }
+    .code-block pre {
+      padding: 20px;
+      overflow-x: auto;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--code-text);
+    }
+    .kw { color: #CBA6F7; }   /* keywords */
+    .fn { color: #89B4FA; }   /* functions */
+    .st { color: #A6E3A1; }   /* strings */
+    .cm { color: #6C7086; font-style: italic; } /* comments */
+    .nm { color: #FAB387; }   /* names/vars */
+    .nu { color: #F38BA8; }   /* numbers */
+
+    /* ── Cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .card {
+      border: 1px solid var(--gray-border);
+      border-radius: 12px;
+      padding: 20px;
+      background: #fafafa;
+    }
+    .card .card-icon { font-size: 28px; margin-bottom: 10px; }
+    .card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 6px; }
+    .card p { font-size: 0.88rem; color: var(--text-light); margin: 0; }
+
+    /* ── Info boxes ── */
+    .info-box {
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      display: flex;
+      gap: 14px;
+    }
+    .info-box .info-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+    .info-box p { margin: 0; font-size: 0.93rem; }
+    .info-box.tip { background: #EFF9F0; border-left: 4px solid var(--green); }
+    .info-box.warn { background: #FEF9E7; border-left: 4px solid var(--orange); }
+    .info-box.info { background: #EBF5FB; border-left: 4px solid var(--blue); }
+
+    /* ── Steps ── */
+    .steps { margin: 24px 0; }
+    .step {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 32px;
+      position: relative;
+    }
+    .step::before {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 48px;
+      bottom: -32px;
+      width: 2px;
+      background: var(--gray-border);
+    }
+    .step:last-child::before { display: none; }
+    .step-num {
+      width: 40px;
+      height: 40px;
+      background: var(--yellow);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      flex-shrink: 0;
+      color: #1a1a1a;
+    }
+    .step-body h4 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .step-body p { font-size: 0.92rem; color: var(--text-light); margin: 0 0 10px; }
+
+    /* ── Diagram ── */
+    .diagram {
+      background: var(--gray-bg);
+      border: 1px solid var(--gray-border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 24px 0;
+      text-align: center;
+    }
+    .diagram-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      flex-wrap: wrap;
+      row-gap: 12px;
+    }
+    .diag-box {
+      background: #fff;
+      border: 2px solid var(--gray-border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      min-width: 110px;
+    }
+    .diag-box.highlight { border-color: var(--blue); background: #EBF5FB; }
+    .diag-box.yellow { border-color: var(--yellow-dark); background: #FFFBCC; }
+    .diag-arrow {
+      font-size: 20px;
+      color: #aaa;
+      padding: 0 8px;
+    }
+    .diagram p { margin: 16px 0 0; font-size: 0.85rem; color: var(--text-light); }
+
+    /* ── File tree ── */
+    .file-tree {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 20px 24px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      color: var(--code-text);
+      line-height: 2;
+      margin: 20px 0;
+    }
+    .file-tree .dir { color: #89B4FA; font-weight: 600; }
+    .file-tree .file { color: #CDD6F4; }
+    .file-tree .comment { color: #6C7086; font-style: italic; }
+
+    /* ── Tool table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 0.9rem;
+    }
+    th {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+    }
+    th:first-child { border-radius: 8px 0 0 0; }
+    th:last-child { border-radius: 0 8px 0 0; }
+    td { padding: 11px 16px; border-bottom: 1px solid var(--gray-border); }
+    tr:nth-child(even) td { background: var(--gray-bg); }
+    .tag {
+      display: inline-block;
+      background: #EBF5FB;
+      color: var(--blue-dark);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'SF Mono', monospace;
+    }
+    .tag.green { background: #EFF9F0; color: #1a7a3a; }
+    .tag.orange { background: #FEF9E7; color: #a04000; }
+
+    /* ── Footer ── */
+    footer {
+      background: #1a1a1a;
+      color: #888;
+      text-align: center;
+      padding: 32px;
+      margin-top: 80px;
+      font-size: 13px;
+    }
+    footer strong { color: var(--yellow); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Guía técnica</div>
+  <h1>Google Agent Development Kit</h1>
+  <p>Cómo construir agentes de IA con ADK y Gemini, desde los conceptos hasta un agente real en producción.</p>
+</header>
+
+<nav>
+  <a href="#cap1">Capítulo 1: ADK</a>
+  <a href="#que-es">¿Qué es ADK?</a>
+  <a href="#conceptos">Conceptos clave</a>
+  <a href="#tools">Tools</a>
+  <a href="#ciclo">Ciclo de vida</a>
+  <a href="#cap2">Capítulo 2: El agente</a>
+  <a href="#arquitectura">Arquitectura</a>
+  <a href="#paso-a-paso">Paso a paso</a>
+  <a href="#api-key">API key</a>
+  <a href="#rag">RAG local</a>
+  <a href="#evals">Evals</a>
+</nav>
+
+
+<!-- ════════════════════════════════════════════
+     CAPÍTULO 1 — ADK
+════════════════════════════════════════════ -->
+<div class="container">
+
+  <div class="chapter" id="cap1">
+    <div class="chapter-label">📘 Capítulo 1</div>
+    <h2>Google Agent Development Kit</h2>
+    <p class="lead">ADK es el framework de Google para construir agentes de IA que pueden razonar, usar herramientas y coordinarse entre sí para resolver tareas complejas.</p>
+  </div>
+
+
+  <!-- ¿Qué es ADK? -->
+  <section id="que-es">
+    <h3><span class="icon">🤖</span> ¿Qué es un agente?</h3>
+    <p>Un agente es un modelo de lenguaje (LLM) al que le dás un <strong>objetivo</strong> y un conjunto de <strong>herramientas</strong>. El modelo decide de forma autónoma qué herramientas usar, en qué orden, y cómo combinar los resultados para lograr el objetivo.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">💬</div>
+        <h4>Modelo + Instrucción</h4>
+        <p>El LLM (Gemini) recibe un system prompt que define su personalidad, rol y reglas de comportamiento.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔧</div>
+        <h4>Tools (herramientas)</h4>
+        <p>Funciones Python que el agente puede llamar: APIs, bases de datos, búsquedas, cálculos, etc.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h4>Loop de razonamiento</h4>
+        <p>El agente piensa → actúa → observa el resultado → vuelve a pensar, hasta resolver la tarea.</p>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <div class="diagram-flow">
+        <div class="diag-box">Usuario</div>
+        <span class="diag-arrow">→</span>
+        <div class="diag-box highlight">Agente<br/><small>(Gemini)</small></div>
+        <span class="diag-arrow">⇄</span>
+        <div class="diag-box yellow">Tools<br/><small>(funciones Python)</small></div>
+      </div>
+      <div class="diagram-flow" style="margin-top:12px">
+        <div class="diag-box highlight" style="min-width:180px">Razona → Decide → Ejecuta → Observa</div>
+      </div>
+      <p>El agente decide autónomamente cuándo y qué tool llamar. El usuario solo ve la respuesta final.</p>
+    </div>
+  </section>
+
+
+  <!-- Conceptos clave -->
+  <section id="conceptos">
+    <h3><span class="icon">🧩</span> Conceptos clave</h3>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Agent</h4>
+          <p>El objeto central. Combina un modelo, un system prompt (instruction) y una lista de tools. En ADK se define con <code>LlmAgent</code>.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+              <span class="code-label">agent.py</span>
+            </div>
+            <pre><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="nm">Agent</span>
+
+<span class="nm">root_agent</span> = <span class="fn">Agent</span>(
+    model=<span class="st">"gemini-2.5-flash"</span>,
+    name=<span class="st">"mi_agente"</span>,
+    instruction=<span class="st">"Sos un asistente de..."</span>,
+    tools=[<span class="nm">tool_1</span>, <span class="nm">tool_2</span>],
+)</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Tools (herramientas)</h4>
+          <p>Son funciones Python normales con type hints y docstring. ADK las convierte automáticamente en herramientas que el modelo puede invocar. El nombre, los parámetros y el docstring se convierten en el schema que Gemini usa para entender cuándo y cómo llamar cada tool.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+              <span class="code-label">tools.py</span>
+            </div>
+            <pre><span class="kw">def</span> <span class="fn">get_order_status</span>(order_id: <span class="nm">str</span>) -> <span class="nm">dict</span>:
+    <span class="st">"""Consulta el estado de una orden.
+
+    Args:
+        order_id: ID de la orden (ej: 1234567890).
+
+    Returns:
+        Estado actual, producto y fecha de entrega.
+    """</span>
+    <span class="cm"># Tu lógica aquí: llamada a API, DB, etc.</span>
+    <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"en camino"</span>, ...}</pre>
+          </div>
+          <div class="info-box tip">
+            <span class="info-icon">💡</span>
+            <p><strong>Tip:</strong> El docstring es crítico. Gemini lo lee para decidir cuándo usar la tool. Un docstring vago lleva a un agente que usa las tools equivocadas o no las usa cuando debería.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Session y Memory</h4>
+          <p>ADK maneja el estado de la conversación en una <strong>Session</strong>. Cada turno del usuario es un evento que el agente procesa. La historia de la conversación se mantiene automáticamente dentro de la sesión.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Multi-agente (opcional)</h4>
+          <p>ADK permite crear arquitecturas donde un agente orquestador delega tareas a agentes especializados. Por ejemplo: un agente raíz que deriva a un agente de envíos, otro de pagos, otro de reclamos.</p>
+          <div class="diagram">
+            <div class="diagram-flow">
+              <div class="diag-box highlight">Orquestador</div>
+              <span class="diag-arrow">→</span>
+              <div class="diag-box">Agente Envíos</div>
+            </div>
+            <div class="diagram-flow" style="margin-top:8px">
+              <div style="min-width:130px"></div>
+              <span class="diag-arrow">→</span>
+              <div class="diag-box">Agente Pagos</div>
+            </div>
+            <div class="diagram-flow" style="margin-top:8px">
+              <div style="min-width:130px"></div>
+              <span class="diag-arrow">→</span>
+              <div class="diag-box">Agente Reclamos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Tools en detalle -->
+  <section id="tools">
+    <h3><span class="icon">🔧</span> Tipos de tools</h3>
+    <p>ADK soporta varios tipos de herramientas. Las más comunes son las <strong>function tools</strong> (funciones Python), pero también soporta tools externas y built-ins.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Cómo se define</th>
+          <th>Cuándo usar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag">Function Tool</span></td>
+          <td>Función Python normal</td>
+          <td>APIs internas, lógica de negocio, bases de datos</td>
+        </tr>
+        <tr>
+          <td><span class="tag green">Built-in Tool</span></td>
+          <td>Tools de ADK (google_search, code_execution)</td>
+          <td>Búsqueda web, ejecutar código Python</td>
+        </tr>
+        <tr>
+          <td><span class="tag orange">Agent Tool</span></td>
+          <td>Otro agente ADK como tool</td>
+          <td>Arquitecturas multi-agente, delegar subtareas</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box info">
+      <span class="info-icon">ℹ️</span>
+      <p>ADK convierte automáticamente las funciones Python en JSON Schema para el function calling de Gemini. Los <strong>type hints</strong> y el <strong>docstring con Args/Returns</strong> son la documentación que el modelo usa para decidir cómo llamar la tool.</p>
+    </div>
+  </section>
+
+
+  <!-- Ciclo de vida -->
+  <section id="ciclo">
+    <h3><span class="icon">🔄</span> Ciclo de vida de una consulta</h3>
+    <p>Esto es lo que pasa internamente cada vez que el usuario envía un mensaje:</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>El usuario envía un mensaje</h4>
+          <p>"Quiero saber dónde está mi compra 1234567890"</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>ADK construye el contexto</h4>
+          <p>Arma el prompt completo: system instruction + historial de la conversación + mensaje actual + descripción de las tools disponibles.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Gemini razona y decide</h4>
+          <p>El modelo analiza el mensaje y decide si necesita llamar una tool o puede responder directamente. En este caso elige llamar <code>get_shipment_tracking("1234567890")</code>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>ADK ejecuta la tool</h4>
+          <p>Llama la función Python, obtiene el resultado (diccionario con el estado del envío) y lo agrega al contexto.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>Gemini genera la respuesta final</h4>
+          <p>Con el resultado de la tool, genera una respuesta en lenguaje natural para el usuario. Si necesita más información, puede llamar otra tool antes de responder.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box tip">
+      <span class="info-icon">💡</span>
+      <p>Este loop de <em>razonar → actuar → observar</em> se llama <strong>ReAct</strong> (Reasoning + Acting). ADK implementa este patrón automáticamente, vos solo definís las tools y el prompt.</p>
+    </div>
+  </section>
+
+
+<!-- ════════════════════════════════════════════
+     CAPÍTULO 2 — EL AGENTE MELI
+════════════════════════════════════════════ -->
+  <div class="chapter" id="cap2" style="margin-top:48px">
+    <div class="chapter-label">🛠️ Capítulo 2</div>
+    <h2>Agente de atención al cliente de Mercado Libre</h2>
+    <p class="lead">Cómo construimos paso a paso un agente de CX real con ADK, incluyendo 9 tools, un sistema de guardrails por prompt y un RAG local con ChromaDB.</p>
+  </div>
+
+
+  <!-- Arquitectura -->
+  <section id="arquitectura">
+    <h3><span class="icon">🏗️</span> Arquitectura del proyecto</h3>
+    <p>El proyecto tiene una estructura modular: cada responsabilidad está separada en su propio archivo.</p>
+
+    <div class="file-tree">
+<span class="dir">agente_austral_v1/</span>
+├── <span class="dir">my_agent/</span>
+│   ├── <span class="file">agent.py</span>        <span class="comment"># Agente principal (root_agent)</span>
+│   ├── <span class="file">prompt.py</span>       <span class="comment"># System instruction y guardrails</span>
+│   ├── <span class="file">tools.py</span>        <span class="comment"># 9 herramientas de CX</span>
+│   ├── <span class="file">__init__.py</span>     <span class="comment"># Expone el agente al ADK runner</span>
+│   └── <span class="dir">rag/</span>
+│       ├── <span class="file">knowledge_base.py</span>  <span class="comment"># Motor RAG (ChromaDB + Gemini embeddings)</span>
+│       └── <span class="dir">documents/</span>
+│           ├── <span class="file">garantias.md</span>
+│           ├── <span class="file">devoluciones.md</span>
+│           ├── <span class="file">envios.md</span>
+│           ├── <span class="file">mercado_puntos.md</span>
+│           └── <span class="file">proteccion_compra.md</span>
+└── <span class="file">ingest.py</span>           <span class="comment"># Script de indexación del RAG</span>
+    </div>
+  </section>
+
+
+  <!-- Paso a paso -->
+  <section id="paso-a-paso">
+    <h3><span class="icon">📋</span> Paso a paso: cómo lo construimos</h3>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Definir el agente base</h4>
+          <p>Arrancamos con el scaffold mínimo de ADK: un <code>Agent</code> con modelo y una instrucción simple. El ADK requiere que el agente principal se llame <code>root_agent</code> y esté en el módulo Python del proyecto.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+              <span class="code-label">my_agent/agent.py</span>
+            </div>
+            <pre><span class="kw">from</span> google.adk.agents <span class="kw">import</span> <span class="nm">Agent</span>
+<span class="kw">from</span> .prompt <span class="kw">import</span> <span class="nm">SYSTEM_INSTRUCTION</span>
+<span class="kw">from</span> .tools <span class="kw">import</span> <span class="nm">get_order_status</span>, <span class="nm">search_knowledge_base</span>, ...
+
+<span class="nm">root_agent</span> = <span class="fn">Agent</span>(
+    model=<span class="st">"gemini-2.5-flash"</span>,
+    name=<span class="st">"meli_customer_service"</span>,
+    instruction=<span class="nm">SYSTEM_INSTRUCTION</span>,
+    tools=[<span class="nm">get_order_status</span>, <span class="nm">get_shipment_tracking</span>, ...],
+)</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Diseñar el system prompt (guardrails)</h4>
+          <p>El prompt es donde viven los <strong>guardrails</strong> — las reglas de comportamiento del agente. Definimos: personalidad en español argentino, cuándo usar cada tool, cómo manejar quejas, y cuándo escalar a un humano.</p>
+          <div class="info-box warn">
+            <span class="info-icon">⚠️</span>
+            <p><strong>Los guardrails viven en el prompt.</strong> Si el agente rechaza preguntas off-topic (como "¿quién es Ragnarin el bárbaro?"), es porque el prompt lo instruye a comportarse como un asistente de MeLi. Para cambiar ese comportamiento, se modifica el prompt — no hay código que hardcodee esas reglas.</p>
+          </div>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+              <span class="code-label">my_agent/prompt.py (extracto)</span>
+            </div>
+            <pre><span class="nm">SYSTEM_INSTRUCTION</span> = <span class="st">"""Sos el asistente virtual de Mercado Libre.
+Tu nombre es Meli. Hablás en español argentino.
+
+## Escalamiento
+Escalá a un agente humano SOLO si:
+- Hay sospecha de fraude
+- El usuario pidió hablar con una persona
+- El problema no se puede resolver con las tools
+
+## Preguntas fuera de tema
+Respondé brevemente y redirigí hacia si necesita
+ayuda con alguna compra.
+"""</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Implementar las 9 tools de CX</h4>
+          <p>Cada tool resuelve un caso de uso específico. Son mocks por ahora, pero el contrato (firma, docstring, tipo de retorno) está diseñado para conectar a las APIs reales de Mercado Libre con un cambio mínimo.</p>
+          <table>
+            <thead><tr><th>Tool</th><th>Qué resuelve</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tag">get_order_status</span></td><td>Estado de una compra</td></tr>
+              <tr><td><span class="tag">get_shipment_tracking</span></td><td>Seguimiento de envío</td></tr>
+              <tr><td><span class="tag">create_return_request</span></td><td>Iniciar devolución o cambio</td></tr>
+              <tr><td><span class="tag">get_return_status</span></td><td>Estado de un reclamo existente</td></tr>
+              <tr><td><span class="tag">get_payment_status</span></td><td>Estado de un pago Mercado Pago</td></tr>
+              <tr><td><span class="tag">get_account_summary</span></td><td>Nivel, Mercado Puntos, historial</td></tr>
+              <tr><td><span class="tag green">search_knowledge_base</span></td><td>Consulta al RAG local</td></tr>
+              <tr><td><span class="tag">search_help</span></td><td>FAQ del centro de ayuda</td></tr>
+              <tr><td><span class="tag orange">escalate_to_human_agent</span></td><td>Escalar casos complejos</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Agregar el RAG local</h4>
+          <p>Para preguntas que requieren conocimiento específico sobre políticas (plazos exactos, condiciones, excepciones), agregamos un RAG local. Ver la sección siguiente para el detalle.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>Levantar y probar con adk web</h4>
+          <p>ADK incluye una UI de desarrollo que permite chatear con el agente, ver el historial de tool calls, y guardar conversaciones como eval cases.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+              <span class="code-label">terminal</span>
+            </div>
+            <pre><span class="cm"># Primero indexar los documentos del RAG</span>
+python ingest.py
+
+<span class="cm"># Levantar la UI de desarrollo</span>
+adk web
+
+<span class="cm"># O correr en modo terminal</span>
+adk run my_agent</pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- API key -->
+  <section id="api-key">
+    <h3><span class="icon">🔑</span> La API key de Google</h3>
+    <p>Antes de poder levantar el agente, necesitás una API key de Google. <strong>Una sola key</strong> alcanza para todo el proyecto: tanto para el modelo Gemini que razona como para los embeddings del RAG.</p>
+
+    <h4 style="margin-top: 24px;">Paso 1 — Generarla en Google AI Studio</h4>
+    <p>Andá a <a href="https://aistudio.google.com/apikey" target="_blank" style="color: var(--blue); font-weight: 600;">aistudio.google.com/apikey</a>, iniciá sesión con cualquier cuenta de Google y hacé clic en <strong>"Create API key"</strong>. Te genera una string del tipo <code>AIzaSyB...</code> de unos 39 caracteres. El tier gratuito permite ~1500 requests/día de Gemini Flash y miles de embeddings — alcanza para experimentar.</p>
+
+    <h4 style="margin-top: 24px;">Paso 2 — Guardarla en <code>.env</code></h4>
+    <p>El proyecto espera la key en un archivo <code>my_agent/.env</code>. Su contenido es mínimo:</p>
+    <div class="code-block">
+      <div class="code-header">
+        <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <span class="code-label">my_agent/.env</span>
+      </div>
+      <pre><span class="cm"># NUNCA commitear este archivo — debe estar en .gitignore</span>
+GOOGLE_API_KEY=AIzaSyB-tu-key-real-acá
+GOOGLE_GENAI_USE_VERTEXAI=FALSE  <span class="cm"># usar la API pública de Gemini, no Vertex</span></pre>
+    </div>
+
+    <h4 style="margin-top: 24px;">Paso 3 — Cómo la lee el código</h4>
+    <p>Hay <strong>tres caminos</strong> distintos por los que la key llega al runtime, dependiendo de qué pieza la necesite:</p>
+    <table>
+      <thead><tr><th>Cliente</th><th>Cómo carga la key</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tag">ADK web/run</span></td>
+          <td>Detecta automáticamente <code>.env</code> al lado del agente. Por eso <code>agent.py</code> nunca menciona la key — ADK la inyecta como variable de entorno antes de instanciar el modelo.</td>
+        </tr>
+        <tr>
+          <td><span class="tag green">knowledge_base.py</span></td>
+          <td>Como crea su propio cliente <code>genai.Client</code> para los embeddings, lee la key explícitamente con <code>os.environ.get("GOOGLE_API_KEY")</code> y lanza <code>EnvironmentError</code> si falta.</td>
+        </tr>
+        <tr>
+          <td><span class="tag orange">ingest.py</span></td>
+          <td>Es un script standalone (no se ejecuta a través de ADK), así que carga el <code>.env</code> manualmente con <code>load_dotenv()</code> de la librería <code>python-dotenv</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="code-block" style="margin-top: 16px;">
+      <div class="code-header">
+        <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <span class="code-label">my_agent/rag/knowledge_base.py (extracto)</span>
+      </div>
+      <pre><span class="kw">def</span> <span class="fn">_get_genai_client</span>() -&gt; genai.Client:
+    api_key = os.environ.get(<span class="st">"GOOGLE_API_KEY"</span>)
+    <span class="kw">if not</span> api_key:
+        <span class="kw">raise</span> <span class="fn">EnvironmentError</span>(<span class="st">"GOOGLE_API_KEY no está configurada en el entorno."</span>)
+    <span class="kw">return</span> genai.<span class="fn">Client</span>(api_key=api_key)</pre>
+    </div>
+
+    <div class="info-box warn" style="margin-top: 20px;">
+      <span class="info-icon">⚠️</span>
+      <div>
+        <p style="margin-bottom: 8px;"><strong>Buenas prácticas de seguridad — no negociables:</strong></p>
+        <ul style="margin-left: 18px;">
+          <li>El <code>.env</code> <strong>nunca</strong> se commitea. Tiene que estar en <code>.gitignore</code> desde el día cero.</li>
+          <li>En su lugar, subí un <code>.env.example</code> con <code>GOOGLE_API_KEY=tu_key_aca</code> (sin el valor real) para que otros sepan qué variables necesitan.</li>
+          <li>Si subiste una key por accidente a GitHub: <strong>revocala ya</strong> en AI Studio y generá una nueva. Los bots escanean repos públicos en minutos.</li>
+          <li>En producción no se usa <code>.env</code>: se inyectan las keys via Secret Manager (AWS/GCP), variables de entorno del runtime (Cloud Run, Vercel), o sistemas dedicados como Vault.</li>
+          <li>Si la app tiene varios servicios, idealmente cada uno tiene <strong>su propia key</strong>, así podés revocarlas por separado y auditar uso.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h4 style="margin-top: 28px;">Cómo verificar que funciona</h4>
+    <div class="code-block">
+      <div class="code-header">
+        <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <span class="code-label">terminal</span>
+      </div>
+      <pre><span class="cm"># 1. El .env existe y tiene la key</span>
+$ cat my_agent/.env
+GOOGLE_API_KEY=AIzaSy...
+
+<span class="cm"># 2. El indexado prueba la conexión a embeddings</span>
+$ python ingest.py
+Indexando documentos...
+Listo. 10 chunks indexados en chroma_db/
+
+<span class="cm"># 3. El agente prueba la conexión a Gemini Flash</span>
+$ adk web
+<span class="cm"># → primer mensaje en :8000 dispara la primera llamada al LLM</span></pre>
+    </div>
+
+    <p style="margin-top: 16px;">Si la key falta o es inválida, <code>ingest.py</code> tira <code>EnvironmentError</code> y <code>adk web</code> tira un <code>401 Unauthorized</code> o <code>403</code> desde la API de Google al recibir el primer mensaje.</p>
+  </section>
+
+
+  <!-- RAG -->
+  <section id="rag">
+    <h3><span class="icon">🔍</span> RAG local: cómo funciona</h3>
+    <p>RAG (Retrieval-Augmented Generation) permite que el agente consulte una base de conocimiento propia antes de responder preguntas específicas sobre políticas.</p>
+
+    <div class="diagram">
+      <div class="diagram-flow">
+        <div class="diag-box">Usuario pregunta<br/><small>"¿cuánto tarda el reintegro?"</small></div>
+        <span class="diag-arrow">→</span>
+        <div class="diag-box highlight">Agente llama<br/><small>search_knowledge_base()</small></div>
+        <span class="diag-arrow">→</span>
+        <div class="diag-box yellow">ChromaDB<br/><small>busca por similitud</small></div>
+      </div>
+      <div class="diagram-flow" style="margin-top:12px">
+        <div class="diag-box">Responde con<br/><small>información precisa</small></div>
+        <span class="diag-arrow">←</span>
+        <div class="diag-box highlight">Gemini sintetiza<br/><small>los chunks relevantes</small></div>
+        <span class="diag-arrow">←</span>
+        <div class="diag-box yellow">Devuelve chunks<br/><small>con score de similitud</small></div>
+      </div>
+      <p>La búsqueda es semántica (por significado), no por palabras clave exactas.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">A</div>
+        <div class="step-body">
+          <h4>Indexación (una sola vez)</h4>
+          <p>Se corren los documentos <code>.md</code> de la carpeta <code>documents/</code>, se dividen en chunks de ~400 palabras, se les calculan embeddings con <code>gemini-embedding-001</code> y se guardan en ChromaDB de forma persistente en disco.</p>
+          <div class="code-block">
+            <div class="code-header">
+              <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+              <span class="code-label">terminal</span>
+            </div>
+            <pre><span class="nm">$</span> python ingest.py
+Indexando documentos...
+Listo. <span class="nu">6</span> chunks indexados en chroma_db/</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">B</div>
+        <div class="step-body">
+          <h4>Búsqueda en runtime</h4>
+          <p>Cuando el agente necesita info específica, llama <code>search_knowledge_base("query")</code>. La función genera un embedding de la query, lo compara contra todos los chunks en ChromaDB por similitud coseno, y devuelve los 3 más relevantes.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">C</div>
+        <div class="step-body">
+          <h4>Agregar nuevo conocimiento</h4>
+          <p>Solo hace falta soltar un nuevo <code>.md</code> en <code>documents/</code> y volver a correr <code>python ingest.py</code>. El índice se reconstruye automáticamente.</p>
+          <div class="info-box tip">
+            <span class="info-icon">💡</span>
+            <p>Para conectar a APIs reales de Mercado Libre: reemplazá los <code>return {...}</code> de mocks en <code>tools.py</code> por llamadas HTTP a los endpoints de la API de ML. El contrato del agente (nombre, parámetros, docstring) no cambia.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Evals -->
+  <section id="evals" style="padding-bottom:80px">
+    <h3><span class="icon">✅</span> Evals: cómo testear el agente</h3>
+    <p>ADK incluye un sistema de evaluación que verifica automáticamente que el agente se comporta correctamente. Hay dos cosas que evalúa:</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">🔧</div>
+        <h4>Tool use correcto</h4>
+        <p>Verifica que el agente llamó las tools esperadas para cada consulta. Si el usuario pregunta por el estado de un envío, el eval chequea que se llamó <code>get_shipment_tracking</code>.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💬</div>
+        <h4>Calidad de respuesta</h4>
+        <p>Compara la respuesta del agente contra una respuesta de referencia usando similitud semántica. Tolera variaciones en el lenguaje — busca que el significado sea correcto, no las palabras exactas.</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="dots"><div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div></div>
+        <span class="code-label">terminal — correr evals</span>
+      </div>
+      <pre><span class="cm"># Correr el eval set contra el agente</span>
+adk eval my_agent my_agent/eval_set_1.evalset.json
+
+<span class="cm"># Output esperado:</span>
+<span class="st">✓</span> caso_devolucion_basica         PASS  (tool: create_return_request ✓)
+<span class="st">✓</span> consulta_estado_envio           PASS  (tool: get_shipment_tracking ✓)
+<span class="st">✗</span> pregunta_garantia_especifica    FAIL  (respuesta: 0.61 < umbral 0.70)</pre>
+    </div>
+
+    <div class="info-box info">
+      <span class="info-icon">ℹ️</span>
+      <p>El eval set (<code>eval_set_1.evalset.json</code>) se puede poblar directamente desde la UI de <code>adk web</code> guardando conversaciones reales como casos de prueba — sin escribir JSON a mano.</p>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<footer>
+  <p>Construido con <strong>Google ADK 1.32</strong> · <strong>Gemini 2.5 Flash</strong> · <strong>ChromaDB 1.5</strong></p>
+  <p style="margin-top:8px">Agente de atención al cliente — Mercado Libre Argentina</p>
+</footer>
+
+</body>
+</html>

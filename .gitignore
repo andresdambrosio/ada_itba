@@ -1,0 +1,18 @@
+# Secretos
+my_agent/.env
+
+# Base de datos local
+my_agent/inscripciones.db
+
+# ADK session store
+my_agent/.adk/
+
+# Vector store (se regenera con ingest.py)
+my_agent/rag/chroma_db/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
