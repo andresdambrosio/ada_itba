@@ -16,3 +16,6 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+
+# macOS
+.DS_Store
