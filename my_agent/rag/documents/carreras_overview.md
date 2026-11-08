@@ -24,6 +24,9 @@ Especializada en yacimientos, perforación, producción y transporte de hidrocar
 ### Licenciatura en Analítica Empresarial
 Combina estadística, ciencia de datos, machine learning y gestión de negocios. Orientada a la toma de decisiones basada en datos. Código de carrera: **ANE**.
 
+### Licenciatura en Negocios y Tecnología
+El licenciado en Negocios y Tecnología del ITBA posee una visión integral en el liderazgo de organizaciones de todo tipo, desde la producción y logística, la cadena de comercialización, hasta el management general y de equipos, en donde su visión y campo de acción se ven potenciados por la implementación de tecnologías disruptivas como la Inteligencia Artificial, Cloud Computing, Machine Learning y Data Analytics aplicadas al negocio, buscando el éxito en todo lo que emprenda. Esto le posibilita crear su propio emprendimiento, como también liderar empresas multinacionales y/o familiares, innovando, optimizando y creando nuevos modelos de negocio en un mundo digital, con la capacidad de adaptarse a un entorno de constante evolución. Código de carrera: **LNT**.
+
 ---
 
 ## Características comunes a todas las carreras
